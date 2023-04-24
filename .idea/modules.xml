@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/webclient devtools.iml" filepath="$PROJECT_DIR$/.idea/webclient devtools.iml" />
+      <module fileurl="file://$PROJECT_DIR$/webclientdevtoolsaddres/webclientdevtoolsaddres.iml" filepath="$PROJECT_DIR$/webclientdevtoolsaddres/webclientdevtoolsaddres.iml" />
+      <module fileurl="file://$PROJECT_DIR$/webclientdevtoolscustomer/webclientdevtoolscustomer.iml" filepath="$PROJECT_DIR$/webclientdevtoolscustomer/webclientdevtoolscustomer.iml" />
+    </modules>
+  </component>
+</project>
