@@ -7,14 +7,10 @@ import com.webclientdevtools.webclientdevtoolscustomer.exception.UserExistsConfl
 import com.webclientdevtools.webclientdevtoolscustomer.exception.UserNotFoundException;
 import com.webclientdevtools.webclientdevtoolscustomer.model.UserModel;
 import com.webclientdevtools.webclientdevtoolscustomer.repository.UserRepository;
+import com.webclientdevtools.webclientdevtoolscustomer.services.AddressService;
 import com.webclientdevtools.webclientdevtoolscustomer.services.UserServices;
 import jakarta.transaction.Transactional;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.BodyInserters;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,11 +20,11 @@ import java.util.UUID;
 public class UserServiceImplementation implements UserServices {
 
     private final UserRepository repository;
-    private final WebClient webClient;
+    private final AddressService addressService;
 
-    public UserServiceImplementation(UserRepository repository, WebClient.Builder webClientBuilder) {
+    public UserServiceImplementation(UserRepository repository, AddressService addressService) {
         this.repository = repository;
-        this.webClient = webClientBuilder.baseUrl("http://localhost:8090").build();
+        this.addressService = addressService;
     }
 
     private UserDto userModelToUserDto(UserModel userModel){
@@ -69,7 +65,6 @@ public class UserServiceImplementation implements UserServices {
     @Transactional
     @Override
     public UserDto createUser(UserAddressDto user) {
-        System.out.println(user);
         if(existsUserByEmail(user.email())){
             throw new UserExistsConflictException("Email ja cadastrado na base de dados para outro usuario");
         }else if(existsUserByCpf(user.cpf())){
@@ -77,31 +72,13 @@ public class UserServiceImplementation implements UserServices {
         }else{
             UUID id = createNewUserAddress(user.address());
             UserModel userModel = new UserModel(null, user.name(),user.cpf(),user.email(),user.phone(),id);
-            System.out.println(user.toString());
-            System.out.println(userModel.toString());
             return userModelToUserDto(repository.save(userModel));
         }
     }
 
     @Override
     public UUID createNewUserAddress(AddressDto address) {
-            webClient.post()
-                    .uri("/address")
-                    .body(BodyInserters.fromValue(address))
-                    .retrieve()
-                    .bodyToMono(AddressDto.class);
-
-           Mono<UUID> response =  webClient.get()
-                    .uri(uriBuilder ->
-                        uriBuilder.path("/address/get-id")
-                                .queryParam("cep",address.cep())
-                                .queryParam("logradouro",address.logradouro())
-                                .queryParam("numero",address.numero())
-                                .build())
-                    .retrieve()
-                    .bodyToMono(UUID.class);
-
-           return response.block();
+        return addressService.createAddressANdReturnId(address);
     }
 
     @Override
