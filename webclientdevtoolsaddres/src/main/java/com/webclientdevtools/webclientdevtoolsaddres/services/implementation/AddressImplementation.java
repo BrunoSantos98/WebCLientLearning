@@ -35,11 +35,20 @@ public class AddressImplementation implements AddressService {
         if(is_existAddress(address.cep(), address.logradouro(), address.numero())) {
             return address;
         } else{
-            AddressModel addressModel = repository.save(new AddressModel(
-                    null, address.cep(), address.logradouro(), address.complemento(), address.numero(),
-                    address.bairro(), address.localidade(), address.uf()
-            ));
-            return addressModelToAddressDto(addressModel);
+            return addressModelToAddressDto(repository.save(new AddressModel(null, address.cep(), address.logradouro(),
+                    address.complemento(), address.numero(), address.bairro(), address.localidade(), address.uf())));
+        }
+    }
+
+    @Transactional
+    @Override
+    public UUID createAddressWithId(AddressDto address) {
+        if(is_existAddress(address.cep(), address.logradouro(), address.numero())) {
+            return repository.findByCepAndLogradouroAndNumero(address.cep(), address.logradouro(), address.numero()).getId();
+        } else{
+            AddressModel addressModel =repository.save(new AddressModel(null, address.cep(), address.logradouro(),
+                    address.complemento(), address.numero(), address.bairro(), address.localidade(), address.uf()));
+            return addressModel.getId();
         }
     }
 

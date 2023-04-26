@@ -9,6 +9,7 @@ import java.util.UUID;
 public interface AddressService {
 
     AddressDto createAddress(AddressDto address);
+    UUID createAddressWithId(AddressDto address);
     boolean is_existAddress(String cep, String logradouro, short numero);
     AddressDto getAddress(String cep, String logradouro, short numero);
     UUID getAddressId(String cep, String logradouro, short numero);
