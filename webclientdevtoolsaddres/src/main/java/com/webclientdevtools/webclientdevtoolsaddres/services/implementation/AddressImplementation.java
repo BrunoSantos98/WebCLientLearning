@@ -42,7 +42,7 @@ public class AddressImplementation implements AddressService {
 
     @Transactional
     @Override
-    public UUID createAddressWithId(AddressDto address) {
+    public UUID createOrUpdateAddressWithId(AddressDto address) {
         if(is_existAddress(address.cep(), address.logradouro(), address.numero())) {
             return repository.findByCepAndLogradouroAndNumero(address.cep(), address.logradouro(), address.numero()).getId();
         } else{

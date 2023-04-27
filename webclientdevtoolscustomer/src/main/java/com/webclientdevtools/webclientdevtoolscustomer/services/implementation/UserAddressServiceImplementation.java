@@ -19,7 +19,7 @@ public class UserAddressServiceImplementation implements AddressService {
     }
 
     @Override
-    public UUID createAddressANdReturnId(AddressDto address) {
+    public UUID createOrUpdateAddressANdReturnId(AddressDto address) {
         Mono<UUID> response = webClient.post()
                 .uri("/address/with-id")
                 .body(BodyInserters.fromValue(address))

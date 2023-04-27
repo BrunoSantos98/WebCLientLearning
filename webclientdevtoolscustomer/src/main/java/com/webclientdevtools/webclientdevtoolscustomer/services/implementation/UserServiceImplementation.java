@@ -70,15 +70,15 @@ public class UserServiceImplementation implements UserServices {
         }else if(existsUserByCpf(user.cpf())){
             throw new UserExistsConflictException("CPF ja cadastrado na base de dados para outro usuario");
         }else{
-            UUID id = createNewUserAddress(user.address());
+            UUID id = createOrUpdateUserAddress(user.address());
             UserModel userModel = new UserModel(null, user.name(),user.cpf(),user.email(),user.phone(),id);
             return userModelToUserDto(repository.save(userModel));
         }
     }
 
     @Override
-    public UUID createNewUserAddress(AddressDto address) {
-        return addressService.createAddressANdReturnId(address);
+    public UUID createOrUpdateUserAddress(AddressDto address) {
+        return addressService.createOrUpdateAddressANdReturnId(address);
     }
 
     @Override
@@ -110,12 +110,14 @@ public class UserServiceImplementation implements UserServices {
 
     @Transactional
     @Override
-    public UserDto updateUser(UserDto user, String cpf) {
+    public UserDto updateUser(UserAddressDto user, String cpf) {
         if(existsUserByCpf(cpf)){
             UserModel userModel = repository.findByCpf(cpf);
+            userModel.setCpf(user.cpf());
             userModel.setName(user.name());
             userModel.setEmail(user.email());
             userModel.setPhone(user.phone());
+            userModel.setAddressId(createOrUpdateUserAddress(user.address()));
             return userModelToUserDto(repository.save(userModel));
         }else{
             throw new UserNotFoundException("Usuario nao localizado pelo CPF informado");

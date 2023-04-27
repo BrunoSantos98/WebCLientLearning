@@ -27,7 +27,7 @@ public class AddressController {
 
     @PostMapping("/with-id")
     public ResponseEntity<UUID> createAddressWithId(@RequestBody AddressDto address) {
-        return ResponseEntity.ok(service.createAddressWithId(address));
+        return ResponseEntity.ok(service.createOrUpdateAddressWithId(address));
     }
 
     @GetMapping

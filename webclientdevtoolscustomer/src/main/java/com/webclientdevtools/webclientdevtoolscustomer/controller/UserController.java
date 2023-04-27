@@ -35,7 +35,7 @@ public class UserController {
     }
 
     @PatchMapping
-    public ResponseEntity<String> updateUser(@RequestBody UserDto user, @RequestParam String cpf) {
+    public ResponseEntity<String> updateUser(@RequestBody UserAddressDto user, @RequestParam String cpf) {
         return ResponseEntity.ok("Usuario atualizado com sucesso:\n\n" + service.updateUser(user, cpf));
     }
 
