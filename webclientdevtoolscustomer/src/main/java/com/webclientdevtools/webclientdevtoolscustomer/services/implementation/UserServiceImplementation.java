@@ -38,7 +38,7 @@ public class UserServiceImplementation implements UserServices {
         return userDto;
     }
 
-    public UserDto getUserById(UUID userId) {
+    private UserDto getUserById(UUID userId) {
         Optional<UserModel> user = repository.findById(userId);
         if(user.isPresent())
             return userModelToUserDto(user.get());
@@ -46,7 +46,7 @@ public class UserServiceImplementation implements UserServices {
             throw new UserNotFoundException("Usuario nao lozalizado pelo ID informado");
     }
 
-    public UserDto getUserByEmail(String userEmail) {
+    private UserDto getUserByEmail(String userEmail) {
         if(existsUserByEmail(userEmail)){
             return userModelToUserDto(repository.findByEmail(userEmail));
         }else{
@@ -54,11 +54,19 @@ public class UserServiceImplementation implements UserServices {
         }
     }
 
-    public UserDto getUserByCpf(String userCpf) {
+    private UserDto getUserByCpf(String userCpf) {
         if(existsUserByCpf(userCpf)){
             return userModelToUserDto(repository.findByCpf(userCpf));
         }else{
             throw new UserNotFoundException("Usuario nao localizado pelo CPF informado");
+        }
+    }
+
+    public void verifyUserInformations(UserAddressDto user){
+        if(existsUserByEmail(user.email()) && repository.findByEmail(user.email()).getCpf() != user.cpf()){
+            throw new UserExistsConflictException("Email ja cadastrado na base de dados para outro usuario");
+        }else if(existsUserByCpf(user.cpf()) && repository.findByCpf(user.cpf()).getName() != user.name()){
+            throw new UserExistsConflictException("CPF ja cadastrado na base de dados para outro usuario");
         }
     }
 
@@ -112,6 +120,7 @@ public class UserServiceImplementation implements UserServices {
     @Override
     public UserDto updateUser(UserAddressDto user, String cpf) {
         if(existsUserByCpf(cpf)){
+            verifyUserInformations(user);
             UserModel userModel = repository.findByCpf(cpf);
             userModel.setCpf(user.cpf());
             userModel.setName(user.name());
