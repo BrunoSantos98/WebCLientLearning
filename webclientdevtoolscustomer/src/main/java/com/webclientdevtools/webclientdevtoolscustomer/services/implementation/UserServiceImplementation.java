@@ -62,7 +62,7 @@ public class UserServiceImplementation implements UserServices {
         }
     }
 
-    public void verifyUserInformations(UserAddressDto user){
+    private void verifyUserInformations(UserAddressDto user){
         if(existsUserByEmail(user.email()) && repository.findByEmail(user.email()).getCpf() != user.cpf()){
             throw new UserExistsConflictException("Email ja cadastrado na base de dados para outro usuario");
         }else if(existsUserByCpf(user.cpf()) && repository.findByCpf(user.cpf()).getName() != user.name()){

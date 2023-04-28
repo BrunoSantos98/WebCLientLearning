@@ -14,8 +14,8 @@ public class UserAddressServiceImplementation implements AddressService {
 
     private final WebClient webClient;
 
-    public UserAddressServiceImplementation(WebClient.Builder webClientBuilder) {
-        this.webClient = webClientBuilder.baseUrl("http://localhost:8090").build();
+    public UserAddressServiceImplementation(String baseUrl) {
+        this.webClient = WebClient.create("http://localhost:8090");
     }
 
     @Override
