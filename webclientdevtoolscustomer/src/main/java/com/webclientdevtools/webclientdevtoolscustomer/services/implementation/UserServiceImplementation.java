@@ -7,14 +7,10 @@ import com.webclientdevtools.webclientdevtoolscustomer.exception.UserExistsConfl
 import com.webclientdevtools.webclientdevtoolscustomer.exception.UserNotFoundException;
 import com.webclientdevtools.webclientdevtoolscustomer.model.UserModel;
 import com.webclientdevtools.webclientdevtoolscustomer.repository.UserRepository;
+import com.webclientdevtools.webclientdevtoolscustomer.services.AddressService;
 import com.webclientdevtools.webclientdevtoolscustomer.services.UserServices;
 import jakarta.transaction.Transactional;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.BodyInserters;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,11 +20,11 @@ import java.util.UUID;
 public class UserServiceImplementation implements UserServices {
 
     private final UserRepository repository;
-    private final WebClient webClient;
+    private final AddressService addressService;
 
-    public UserServiceImplementation(UserRepository repository, WebClient.Builder webClientBuilder) {
+    public UserServiceImplementation(UserRepository repository, AddressService addressService) {
         this.repository = repository;
-        this.webClient = webClientBuilder.baseUrl("http://localhost:8090").build();
+        this.addressService = addressService;
     }
 
     private UserDto userModelToUserDto(UserModel userModel){
@@ -42,7 +38,7 @@ public class UserServiceImplementation implements UserServices {
         return userDto;
     }
 
-    public UserDto getUserById(UUID userId) {
+    private UserDto getUserById(UUID userId) {
         Optional<UserModel> user = repository.findById(userId);
         if(user.isPresent())
             return userModelToUserDto(user.get());
@@ -50,7 +46,7 @@ public class UserServiceImplementation implements UserServices {
             throw new UserNotFoundException("Usuario nao lozalizado pelo ID informado");
     }
 
-    public UserDto getUserByEmail(String userEmail) {
+    private UserDto getUserByEmail(String userEmail) {
         if(existsUserByEmail(userEmail)){
             return userModelToUserDto(repository.findByEmail(userEmail));
         }else{
@@ -58,7 +54,7 @@ public class UserServiceImplementation implements UserServices {
         }
     }
 
-    public UserDto getUserByCpf(String userCpf) {
+    private UserDto getUserByCpf(String userCpf) {
         if(existsUserByCpf(userCpf)){
             return userModelToUserDto(repository.findByCpf(userCpf));
         }else{
@@ -66,42 +62,31 @@ public class UserServiceImplementation implements UserServices {
         }
     }
 
+    private void verifyUserInformations(UserAddressDto user){
+        if(existsUserByEmail(user.email()) && repository.findByEmail(user.email()).getCpf() != user.cpf()){
+            throw new UserExistsConflictException("Email ja cadastrado na base de dados para outro usuario");
+        }else if(existsUserByCpf(user.cpf()) && repository.findByCpf(user.cpf()).getName() != user.name()){
+            throw new UserExistsConflictException("CPF ja cadastrado na base de dados para outro usuario");
+        }
+    }
+
     @Transactional
     @Override
     public UserDto createUser(UserAddressDto user) {
-        System.out.println(user);
         if(existsUserByEmail(user.email())){
             throw new UserExistsConflictException("Email ja cadastrado na base de dados para outro usuario");
         }else if(existsUserByCpf(user.cpf())){
             throw new UserExistsConflictException("CPF ja cadastrado na base de dados para outro usuario");
         }else{
-            UUID id = createNewUserAddress(user.address());
+            UUID id = createOrUpdateUserAddress(user.address());
             UserModel userModel = new UserModel(null, user.name(),user.cpf(),user.email(),user.phone(),id);
-            System.out.println(user.toString());
-            System.out.println(userModel.toString());
             return userModelToUserDto(repository.save(userModel));
         }
     }
 
     @Override
-    public UUID createNewUserAddress(AddressDto address) {
-            webClient.post()
-                    .uri("/address")
-                    .body(BodyInserters.fromValue(address))
-                    .retrieve()
-                    .bodyToMono(AddressDto.class);
-
-           Mono<UUID> response =  webClient.get()
-                    .uri(uriBuilder ->
-                        uriBuilder.path("/address/get-id")
-                                .queryParam("cep",address.cep())
-                                .queryParam("logradouro",address.logradouro())
-                                .queryParam("numero",address.numero())
-                                .build())
-                    .retrieve()
-                    .bodyToMono(UUID.class);
-
-           return response.block();
+    public UUID createOrUpdateUserAddress(AddressDto address) {
+        return addressService.createOrUpdateAddressANdReturnId(address);
     }
 
     @Override
@@ -133,12 +118,15 @@ public class UserServiceImplementation implements UserServices {
 
     @Transactional
     @Override
-    public UserDto updateUser(UserDto user, String cpf) {
+    public UserDto updateUser(UserAddressDto user, String cpf) {
         if(existsUserByCpf(cpf)){
+            verifyUserInformations(user);
             UserModel userModel = repository.findByCpf(cpf);
+            userModel.setCpf(user.cpf());
             userModel.setName(user.name());
             userModel.setEmail(user.email());
             userModel.setPhone(user.phone());
+            userModel.setAddressId(createOrUpdateUserAddress(user.address()));
             return userModelToUserDto(repository.save(userModel));
         }else{
             throw new UserNotFoundException("Usuario nao localizado pelo CPF informado");

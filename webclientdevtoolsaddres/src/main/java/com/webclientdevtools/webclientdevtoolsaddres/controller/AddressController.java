@@ -1,7 +1,6 @@
 package com.webclientdevtools.webclientdevtoolsaddres.controller;
 
 import com.webclientdevtools.webclientdevtoolsaddres.dto.AddressDto;
-import com.webclientdevtools.webclientdevtoolsaddres.models.AddressModel;
 import com.webclientdevtools.webclientdevtoolsaddres.services.AddressService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +22,12 @@ public class AddressController {
     @PostMapping
     public ResponseEntity<AddressDto> createAddress(@RequestBody AddressDto address) {
         return ResponseEntity.ok(service.createAddress(address));
+
+    }
+
+    @PostMapping("/with-id")
+    public ResponseEntity<UUID> createAddressWithId(@RequestBody AddressDto address) {
+        return ResponseEntity.ok(service.createOrUpdateAddressWithId(address));
     }
 
     @GetMapping
@@ -36,7 +41,7 @@ public class AddressController {
         return ResponseEntity.ok(service.getAddressId(cep, logradouro,numero));
     }
 
-    @GetMapping("find-address")
+    @GetMapping("/find-address")
     public ResponseEntity<AddressDto> getAddressByInformations(@RequestParam String cep,
                                                                @RequestParam String logradouro,
                                                                @RequestParam short numero) {
