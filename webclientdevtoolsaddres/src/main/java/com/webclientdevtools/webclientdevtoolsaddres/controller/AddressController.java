@@ -41,7 +41,7 @@ public class AddressController {
         return ResponseEntity.ok(service.getAddressId(cep, logradouro,numero));
     }
 
-    @GetMapping("find-address")
+    @GetMapping("/find-address")
     public ResponseEntity<AddressDto> getAddressByInformations(@RequestParam String cep,
                                                                @RequestParam String logradouro,
                                                                @RequestParam short numero) {

@@ -1,53 +1,61 @@
 package com.webclientdevtools.webclientdevtoolscustomer.services.implementation;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.webclientdevtools.webclientdevtoolscustomer.dto.AddressDto;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+
+import java.io.IOException;
 import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 
 @ExtendWith(MockitoExtension.class)
 class UserAddressServiceImplementationTest {
-
-    @Mock
-    private WebClient webClient;
+    public static MockWebServer server;
+    private static ObjectMapper mapper = new ObjectMapper();
     @InjectMocks
     private UserAddressServiceImplementation service;
-    AddressDto address = new AddressDto("01001-010","Rua teste", "lado par", (short) 12, "Bairro", "Municipio", "Estado");
+    AddressDto address = new AddressDto("01001-010","Rua teste", "lado par", (short) 12, "Bairro", "Municipio", "SP");
     UUID id = UUID.randomUUID();
 
-    @BeforeEach
-    public void setUp() {
-        when(webClient.post())
-                .thenReturn(mock(WebClient.RequestBodyUriSpec.class));
-        when(webClient.post().uri("/address/with-id"))
-                .thenReturn(mock(WebClient.RequestBodySpec.class));
-        when(webClient.post().uri("/address/with-id").bodyValue(address))
-                .thenReturn(mock(WebClient.RequestHeadersSpec.class));
-        when(webClient.post().uri("/address/with-id").bodyValue(address).retrieve())
-                .thenReturn(mock(WebClient.ResponseSpec.class));
-        when(webClient.post().uri("/address/with-id").bodyValue(address).retrieve().bodyToMono(UUID.class))
-                .thenReturn(Mono.just(id));
+    @BeforeAll
+    static void setUp() throws IOException {
+        server = new MockWebServer();
+        server.start(8090);
+    }
+
+    @AfterAll
+    static void tearDown() throws IOException {
+        server.shutdown();
     }
 
     @Test
     @DisplayName("Busca dados de endereço e retorna ID")
-    void createOrUpdateAddressANdReturnId() throws InterruptedException {
-      /* when(webClient.post().uri("http://localhost:8090/address/with-id")
-                .body(BodyInserters.fromValue(address))
-                .retrieve().bodyToMono(UUID.class)).thenReturn(Mono.just(id));*/
+    void createOrUpdateAddressANdReturnId() throws Exception {
 
-        UUID meuId = service.createOrUpdateAddressANdReturnId(address);
+        //Configura a resposta esperada pelo server
+        MockResponse response = new MockResponse().setResponseCode(HttpStatus.OK.value())
+                .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .setBody(mapper.writeValueAsString(id));
 
-        assertEquals(id, meuId);
+        //configura o servidor para retornar a resposta esperada
+        server.enqueue(response);
 
+
+        //chama a função
+        service.createOrUpdateAddressANdReturnId(address);
+
+        RecordedRequest request = server.takeRequest();
+
+        assertEquals( "POST", request.getMethod());
+        assertEquals("/address/with-id", request.getPath());
     }
 }
